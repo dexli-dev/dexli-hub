@@ -5,13 +5,16 @@
 // tests run — handled in package.json's test command path or invoked by
 // the smoke runner before vitest.
 
-import { spawn, spawnSync } from 'node:child_process';
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-let child: ChildProcessWithoutNullStreams | null = null;
+// `stdio: ['ignore', 'pipe', 'pipe']` produces a ChildProcessByStdio<null,
+// Readable, Readable> (stdin=null via 'ignore'). Annotate with the wider
+// ChildProcess so the structural type holds without a cast; stdout/stderr
+// reads become null-safe via optional chaining below.
+let child: ChildProcess | null = null;
 
 const PORT = process.env.SERVER_PORT || '3300';
 const HOST = '127.0.0.1';
@@ -54,10 +57,10 @@ export async function setup(): Promise<void> {
 	child = spawn(process.execPath, [BUILD_ENTRY], {
 		env: { ...process.env, HOST, PORT, NODE_ENV: 'production' },
 		stdio: ['ignore', 'pipe', 'pipe']
-	}) as ChildProcessWithoutNullStreams;
+	});
 
-	child.stdout.on('data', () => {});
-	child.stderr.on('data', () => {});
+	child.stdout?.on('data', () => {});
+	child.stderr?.on('data', () => {});
 
 	await waitForServer(`http://${HOST}:${PORT}/`);
 	process.env.TEST_SERVER_URL = `http://${HOST}:${PORT}`;
