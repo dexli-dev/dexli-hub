@@ -26,7 +26,7 @@ WORKDIR /app
 
 LABEL org.opencontainers.image.title="dexli" \
       org.opencontainers.image.description="dexli.dev apex hub — anti-IDE tiny tools, URL-shareable state, no accounts." \
-      org.opencontainers.image.source="https://github.com/Milkslayer/dexli-hub" \
+      org.opencontainers.image.source="https://github.com/dexli-dev/dexli-hub" \
       org.opencontainers.image.licenses="UNLICENSED"
 
 ENV NODE_ENV=production \
