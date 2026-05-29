@@ -4,7 +4,7 @@
 //   * Item 4 (per-page metadata cardinality)
 //   * Item 5 (JSON-LD shape, Article + CollectionPage)
 //   * Item 9 (substrate refinements — 9a single meta description,
-//             9c parallel ANALYTICS_SLOT count via CTO nudge 1)
+//             9c parallel analytics-snippet cardinality via CTO nudge 1)
 //
 // Approach: globalSetup spawns the production `node build/index.js` server
 // on 127.0.0.1:3300; these tests fetch live HTML and assert against it.
@@ -240,13 +240,23 @@ describe('substrate refinement parity — bar item 9', () => {
 		}
 	});
 
-	it('item 9(c) — ANALYTICS_SLOT count on /blog equals count on / equals 1 (CTO nudge 1)', async () => {
+	it('item 9(c) — analytics-snippet count on /blog equals count on / equals 1 (CTO nudge 1)', async () => {
+		// Original D3 oracle was "ANALYTICS_SLOT literal appears exactly
+		// once per surface" (the empty-marker stage). After M wired
+		// Umami 2026-05-29, the marker was replaced by the real
+		// `<script defer src="https://analytics.innersyntax.dev/script.js"
+		// data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"></script>`
+		// snippet. Same cardinality discipline — exactly-one, present on
+		// every surface — pointed at the live identifier instead of the
+		// placeholder. The data-website-id literal is specific enough to
+		// avoid false-positives against unrelated content.
+		const ANALYTICS_NEEDLE = /data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"/g;
 		const apex = await fetchHtml('/');
 		const blogIdx = await fetchHtml('/blog');
 		const post = await fetchHtml(FIRST_POST_ROUTE);
-		const apexCount = countOccurrences(apex.html, /ANALYTICS_SLOT/g);
-		const blogIdxCount = countOccurrences(blogIdx.html, /ANALYTICS_SLOT/g);
-		const postCount = countOccurrences(post.html, /ANALYTICS_SLOT/g);
+		const apexCount = countOccurrences(apex.html, ANALYTICS_NEEDLE);
+		const blogIdxCount = countOccurrences(blogIdx.html, ANALYTICS_NEEDLE);
+		const postCount = countOccurrences(post.html, ANALYTICS_NEEDLE);
 		expect(apexCount).toBe(1);
 		expect(blogIdxCount).toBe(1);
 		expect(postCount).toBe(1);

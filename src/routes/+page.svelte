@@ -42,8 +42,10 @@
 	// the lime sibling-glyph tiles below in main, and reads distinctly
 	// from ⌁ / ◷ / ∋ at every size tested.
 	//
-	// Item 8 (Umami slot) — already in app.html as <!-- ANALYTICS_SLOT -->.
-	// Single grep-discoverable location; no active script.
+	// Item 8 (Umami slot) — wired in app.html 2026-05-29 with the
+	// production Umami snippet (analytics.innersyntax.dev/script.js +
+	// data-website-id literal). Parity test in tests/routes-html.test.ts
+	// asserts exactly-one occurrence per surface.
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import ToolCard from '$lib/components/ToolCard.svelte';
 	import { FAMILY } from '@dexli/family';
