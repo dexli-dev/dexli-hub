@@ -1,14 +1,33 @@
 # Multi-stage build: tiny final image, full devDeps only during build.
-# Single-command build (`docker build .`) + single-command run.
 #
-# Hub is content-only — no @dexli/family submodule consumer (D2 scope is
-# apex page; cross-sibling URL composition is cycle-3/D3 territory). So
-# this Dockerfile is the SIMPLE shape (no stage-0 submodule fetch, no
-# postinstall git ops). If/when D3 or future hub iterations add a
-# dexli-family dependency, fold in the multi-stage submodule fetch
-# pattern from tinywebhook's cycle-3-recovered Dockerfile.
+# dexli.dev apex hub — consumes the @dexli/family library at
+# vendored/dexli-family via git submodule. Apex auto-renders the
+# tools-index from `FAMILY` filtered by `published === true && apexCard
+# !== null` (CEO two-flag lock 2026-05-29 / [[feedback_family_brand_template]]).
+# Future ventures inherit the apex card slot by updating dexli-family
+# alone — no per-venture apex-page edit.
 
-# ---- Build stage ----------------------------------------------------------
+# ---- Stage 0: fetch dexli-family library at pinned SHA -------------------
+# We can't `git submodule update --init` inside the main build stage
+# because `.dockerignore` excludes `.git/` (intentional — keeps the
+# runtime image slim) and node:22-alpine doesn't ship `git`. A tiny
+# alpine stage with `git` does the clone + checkout, and the build
+# stage COPYs the result in. Same pattern as tinywebhook + diff-dexli.
+#
+# The SHA is duplicated between this Dockerfile and .gitmodules /
+# git submodule pin. **CTO discipline: when bumping the submodule pin,
+# bump DEXLI_FAMILY_SHA in lockstep.** Drift causes a build failure
+# (SHA doesn't exist) or behavioral divergence between local-tested
+# code and deployed code. Catch at code review.
+FROM alpine:3.20 AS submodules
+ARG DEXLI_FAMILY_SHA=538bbecea5888bd4897fa73ae83a1c961db8a5d0
+RUN apk add --no-cache git
+RUN git clone https://github.com/dexli-dev/dexli-family.git /vendored-dexli-family \
+    && cd /vendored-dexli-family \
+    && git checkout ${DEXLI_FAMILY_SHA} \
+    && rm -rf .git
+
+# ---- Stage 1: build the app -----------------------------------------------
 FROM node:22-alpine AS build
 WORKDIR /app
 
@@ -16,11 +35,13 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 COPY . .
+COPY --from=submodules /vendored-dexli-family ./vendored/dexli-family
+
 RUN npm run build
 
 RUN npm prune --omit=dev
 
-# ---- Runtime stage --------------------------------------------------------
+# ---- Stage 2: runtime -----------------------------------------------------
 FROM node:22-alpine AS runtime
 WORKDIR /app
 

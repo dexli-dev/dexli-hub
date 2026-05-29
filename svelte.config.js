@@ -6,11 +6,19 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: adapter(),
-		// Cron has no webhook-receiver surface — every state-changing endpoint
-		// originates in our own UI. SvelteKit's default origin-based CSRF check
-		// is what we want, so we keep the default (checkOrigin: true). This is
-		// where cron diverges from the tinywebhook config, which had to disable
-		// CSRF to accept cross-origin webhooks.
+		// `@dexli/family` import alias points at the canonical TS entry
+		// of the family library at vendored/dexli-family/, pinned as a
+		// git submodule (see .gitmodules). Same alias as tinywebhook +
+		// diff-dexli consumers, so apex auto-render code reads
+		// identically to sibling consumer code.
+		alias: {
+			'@dexli/family': './vendored/dexli-family/src/index.ts'
+		},
+		// Apex hub has no webhook-receiver surface — every state-changing
+		// path originates in our own UI. SvelteKit's default origin-based
+		// CSRF check is what we want, so we keep the default
+		// (checkOrigin: true). Diverges from tinywebhook, which had to
+		// disable CSRF to accept cross-origin webhooks.
 		//
 		// Strict CSP — auto mode emits per-page nonces/hashes for SvelteKit's
 		// hydration inline scripts, so `script-src 'self'` holds without

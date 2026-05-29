@@ -46,27 +46,23 @@
 	// Single grep-discoverable location; no active script.
 	import Wordmark from '$lib/components/Wordmark.svelte';
 	import ToolCard from '$lib/components/ToolCard.svelte';
+	import { FAMILY } from '@dexli/family';
 
-	const TOOLS = [
-		{
-			glyph: '⌁',
-			name: 'webhook',
-			purpose: 'Temporary webhook inbox — capture, inspect, replay HTTP callbacks.',
-			href: 'https://webhook.dexli.dev'
-		},
-		{
-			glyph: '◷',
-			name: 'cron',
-			purpose: 'Cron expression parser — firings, timezones, shareable URL state.',
-			href: 'https://cron.dexli.dev'
-		},
-		{
-			glyph: '∋',
-			name: 'regex',
-			purpose: 'Live regex tester — highlight, enumerate, share via URL.',
-			href: 'https://regex.dexli.dev'
-		}
-	];
+	// Apex tools index auto-renders from the @dexli/family registry per
+	// CEO two-flag lock 2026-05-29 (see [[feedback_family_brand_template]]).
+	// Filter: published === true && apexCard !== null. The narrowing helper
+	// `hasApexCard` lets TypeScript see the non-null branch inside the map.
+	// Future ventures register in dexli-family and flip `published: true +
+	// apexCard: {...}` at ship moment — apex inherits the new card slot
+	// automatically via the next submodule pin bump.
+	const TOOLS = Object.values(FAMILY)
+		.filter((sib) => sib.display.published && sib.display.apexCard !== null)
+		.map((sib) => ({
+			glyph: sib.display.apexCard!.glyph,
+			name: sib.display.apexCard!.title,
+			purpose: sib.display.apexCard!.tagline,
+			href: sib.baseUrl + sib.path
+		}));
 </script>
 
 <svelte:head>
