@@ -4,7 +4,7 @@
 	export const metadata: PostMetadata = {
 		title: 'Why a family of tiny tools',
 		slug: 'why-a-family-of-tiny-tools',
-		datePublished: '2026-05-29',
+		datePublished: '2026-05-29T10:00:00Z',
 		excerpt:
 			'The web is full of dev tools that started tiny and got fat. dexli.dev is a bet against that drift — small tools, one job each, no account gate.',
 		wordCount: 633

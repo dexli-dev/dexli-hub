@@ -4,7 +4,7 @@
 	export const metadata: PostMetadata = {
 		title: 'The async eval loop: shipping tools without marking your own homework',
 		slug: 'the-async-eval-loop',
-		datePublished: '2026-05-29',
+		datePublished: '2026-05-29T09:00:00Z',
 		excerpt:
 			'AI agents demo well and stall on real work because the thing that writes the code also grades it. Here is the structure that fixes it.',
 		wordCount: 760
