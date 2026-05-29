@@ -14,8 +14,14 @@
 // per CTO scope list). The mechanical assertions a browser-walk would make
 // on the SSR HTML — DOM presence, attribute values, cardinality — are all
 // string-derivable from the served response without a JS engine.
+//
+// 2026-05-29 content integration: placeholder stubs replaced with real
+// CEO-authored posts. Routes derive from POSTS dynamically; per-post slug
+// assertions pick the first POST; typography 11-element coverage moved
+// to a non-published fixture (see tests/typography-coverage.test.ts).
 
 import { describe, expect, it, beforeAll } from 'vitest';
+import { POSTS } from '../src/lib/content/blog/index';
 
 let baseUrl: string;
 
@@ -32,12 +38,13 @@ function countOccurrences(haystack: string, needleRegex: RegExp): number {
 	return (haystack.match(needleRegex) || []).length;
 }
 
-// Build a known-good set of paths we walk for cardinality assertions.
-const ROUTES_FOR_CARDINALITY = [
-	'/blog',
-	'/blog/placeholder-typography-reference-1-of-2',
-	'/blog/placeholder-typography-reference-2-of-2'
-];
+// Routes walked for cardinality / inheritance / negative-oracle assertions.
+// Derived from POSTS so the suite tracks the registry without per-cycle
+// hardcoded slug maintenance.
+const POST_ROUTES = POSTS.map((p) => `/blog/${p.metadata.slug}`);
+const ROUTES_FOR_CARDINALITY = ['/blog', ...POST_ROUTES];
+const FIRST_POST = POSTS[0]; // newest post (registry is reverse-chronological)
+const FIRST_POST_ROUTE = `/blog/${FIRST_POST.metadata.slug}`;
 
 describe('route rendering — bar items 1 + 2', () => {
 	it('GET /blog returns 200 with reverse-chrono listing', async () => {
@@ -45,38 +52,44 @@ describe('route rendering — bar items 1 + 2', () => {
 		expect(r.status).toBe(200);
 		expect(r.html).toMatch(/<h1[^>]*>blog<\/h1>/i);
 		const slugLinks = [...r.html.matchAll(/href="\/blog\/([a-z0-9-]+)"/g)].map((m) => m[1]);
-		expect(slugLinks).toContain('placeholder-typography-reference-1-of-2');
-		expect(slugLinks).toContain('placeholder-typography-reference-2-of-2');
-		// Reverse-chrono: post 2 (newer) before post 1
-		const idx2 = slugLinks.indexOf('placeholder-typography-reference-2-of-2');
-		const idx1 = slugLinks.indexOf('placeholder-typography-reference-1-of-2');
-		expect(idx2).toBeLessThan(idx1);
+		// Every registered post appears in the listing
+		for (const post of POSTS) {
+			expect(slugLinks).toContain(post.metadata.slug);
+		}
+		// Reverse-chrono: POSTS registry order is reverse-chronological;
+		// the slugs in the listing should appear in the same order.
+		const orderedSlugs = POSTS.map((p) => p.metadata.slug);
+		const slugLinkOrder = orderedSlugs.map((s) => slugLinks.indexOf(s));
+		for (let i = 1; i < slugLinkOrder.length; i++) {
+			expect(slugLinkOrder[i - 1]).toBeLessThan(slugLinkOrder[i]);
+		}
 	});
 
 	it('each /blog entry has visible date + datetime attribute + reading time', async () => {
 		const r = await fetchHtml('/blog');
-		// At least 2 <time datetime="YYYY-MM-DD..."> elements
+		// One <time datetime="YYYY-MM-DD..."> per registered post
 		const timeEls = r.html.match(/<time\s+datetime="\d{4}-\d{2}-\d{2}[^"]*"[^>]*>/g) || [];
-		expect(timeEls.length).toBeGreaterThanOrEqual(2);
-		// At least 2 "X min read" reading time displays
+		expect(timeEls.length).toBeGreaterThanOrEqual(POSTS.length);
+		// One "X min read" reading time per post
 		const readingTime = r.html.match(/\d+ min read/g) || [];
-		expect(readingTime.length).toBeGreaterThanOrEqual(2);
+		expect(readingTime.length).toBeGreaterThanOrEqual(POSTS.length);
 	});
 
 	it('GET /blog/[slug] returns 200 with H1, time, reading-time, body', async () => {
-		const r = await fetchHtml('/blog/placeholder-typography-reference-1-of-2');
+		const r = await fetchHtml(FIRST_POST_ROUTE);
 		expect(r.status).toBe(200);
-		expect(r.html).toMatch(
-			/<h1[^>]*>Placeholder: typography reference \(1 of 2\)<\/h1>/
-		);
-		expect(r.html).toMatch(/<time\s+datetime="2026-05-27"[^>]*>/);
+		// H1 contains the post title (escape any regex specials)
+		const escapedTitle = FIRST_POST.metadata.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		expect(r.html).toMatch(new RegExp(`<h1[^>]*>${escapedTitle}<\\/h1>`));
+		// Time element with the post's datePublished
+		const dateOnly = FIRST_POST.metadata.datePublished.slice(0, 10);
+		expect(r.html).toMatch(new RegExp(`<time\\s+datetime="${dateOnly}[^"]*"[^>]*>`));
+		// Reading-time string present
 		expect(r.html).toMatch(/\d+ min read/);
-		// Typography elements per item 2: h2, h3, p, inline code, pre code,
-		// blockquote, ol, ul, a, em, strong. Verified on the rendered HTML.
-		const required = ['<h2', '<h3', '<p>', '<code', '<pre', '<blockquote', '<ol', '<ul', '<a ', '<em', '<strong'];
-		for (const tag of required) {
-			expect(r.html).toContain(tag);
-		}
+		// Body has at least one paragraph (per-element typography coverage
+		// is exercised by tests/typography-coverage.test.ts against the
+		// non-published fixture).
+		expect(r.html).toMatch(/<p[\s>]/);
 	});
 
 	it('GET /blog/[unknown-slug] returns 404', async () => {
@@ -154,7 +167,7 @@ describe('SEO singleton cardinality — bar item 4', () => {
 		const idx = await fetchHtml('/blog');
 		expect(idx.html).toMatch(/<meta\s+property="og:type"\s+content="website"/);
 
-		const post = await fetchHtml('/blog/placeholder-typography-reference-1-of-2');
+		const post = await fetchHtml(FIRST_POST_ROUTE);
 		expect(post.html).toMatch(/<meta\s+property="og:type"\s+content="article"/);
 	});
 
@@ -199,19 +212,19 @@ describe('JSON-LD shape — bar item 5', () => {
 	});
 
 	it('/blog/[slug] JSON-LD is @type=Article with all seven required fields', async () => {
-		const r = await fetchHtml('/blog/placeholder-typography-reference-1-of-2');
+		const r = await fetchHtml(FIRST_POST_ROUTE);
 		const ld = r.html.match(/<script\s+type="application\/ld\+json">([\s\S]+?)<\/script>/)?.[1];
 		expect(ld).toBeTruthy();
 		const parsed = JSON.parse(ld!);
 		expect(parsed['@type']).toBe('Article');
-		expect(parsed.headline).toBe('Placeholder: typography reference (1 of 2)');
-		expect(parsed.datePublished).toBe('2026-05-27');
-		expect(parsed.dateModified).toBe('2026-05-27');
+		expect(parsed.headline).toBe(FIRST_POST.metadata.title);
+		expect(parsed.datePublished).toBe(FIRST_POST.metadata.datePublished);
+		const expectedModified =
+			FIRST_POST.metadata.dateModified ?? FIRST_POST.metadata.datePublished;
+		expect(parsed.dateModified).toBe(expectedModified);
 		expect(parsed.author).toEqual({ '@type': 'Organization', name: 'dexli.dev' });
 		expect(parsed.publisher).toEqual({ '@type': 'Organization', name: 'dexli.dev' });
-		expect(parsed.mainEntityOfPage).toBe(
-			'https://dexli.dev/blog/placeholder-typography-reference-1-of-2'
-		);
+		expect(parsed.mainEntityOfPage).toBe(`https://dexli.dev${FIRST_POST_ROUTE}`);
 		// image must match og:image
 		const ogImage = r.html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/)?.[1];
 		expect(parsed.image).toBe(ogImage);
@@ -230,7 +243,7 @@ describe('substrate refinement parity — bar item 9', () => {
 	it('item 9(c) — ANALYTICS_SLOT count on /blog equals count on / equals 1 (CTO nudge 1)', async () => {
 		const apex = await fetchHtml('/');
 		const blogIdx = await fetchHtml('/blog');
-		const post = await fetchHtml('/blog/placeholder-typography-reference-1-of-2');
+		const post = await fetchHtml(FIRST_POST_ROUTE);
 		const apexCount = countOccurrences(apex.html, /ANALYTICS_SLOT/g);
 		const blogIdxCount = countOccurrences(blogIdx.html, /ANALYTICS_SLOT/g);
 		const postCount = countOccurrences(post.html, /ANALYTICS_SLOT/g);

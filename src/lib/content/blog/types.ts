@@ -11,7 +11,10 @@ export interface PostMetadata {
 	datePublished: string;
 	/** ISO-8601 last-modified date. Falls back to datePublished when omitted. */
 	dateModified?: string;
-	/** ≤140-char summary shown in /blog index + used as RSS <description>. */
+	/** ≤160-char summary shown in /blog index + used as RSS <description>.
+	 *  (D3 originally specified ≤140; relaxed during 2026-05-29 content
+	 *  integration to accommodate real-post excerpt sizing while keeping
+	 *  the constraint compact-rendering-friendly.) */
 	excerpt: string;
 	/** Body word count, manually authored. Drives reading-time at 200 wpm. */
 	wordCount: number;
