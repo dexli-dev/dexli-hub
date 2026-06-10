@@ -20,7 +20,7 @@
 # (SHA doesn't exist) or behavioral divergence between local-tested
 # code and deployed code. Catch at code review.
 FROM alpine:3.20 AS submodules
-ARG DEXLI_FAMILY_SHA=a8f3d1e8e101286ff0eefbe76bde8d0448f696b4
+ARG DEXLI_FAMILY_SHA=d4febbe6ab2b5fa015d41ec32723ba76f19b9b7d
 RUN apk add --no-cache git
 RUN git clone https://github.com/dexli-dev/dexli-family.git /vendored-dexli-family \
     && cd /vendored-dexli-family \

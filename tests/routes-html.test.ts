@@ -106,7 +106,7 @@ describe('Wordmark + footer inheritance — bar item 3', () => {
 		expect(r.html).toMatch(/<span class="logo[^"]*"[^>]*>❖<\/span>/);
 		// Distinct from every sibling glyph
 		const wordmarkBlock = r.html.match(/<a class="brand[^"]*"[\s\S]*?<\/a>/)?.[0] || '';
-		expect(wordmarkBlock).not.toMatch(/[⌁◷∋]/);
+		expect(wordmarkBlock).not.toMatch(/[⌁◷∋Δ❝]/);
 	});
 
 	it.each(ROUTES_FOR_CARDINALITY)('Footer DOM matches apex — link inventory + locked literals on %s', async (path) => {
@@ -117,7 +117,7 @@ describe('Wordmark + footer inheritance — bar item 3', () => {
 		expect(r.html).toMatch(/<span class="self[^"]*">dexli\.dev<\/span>/);
 		// All 3 sibling hrefs with rel="external" (allow Svelte's scoped class suffix
 		// after the rel attribute — bar oracle is href + rel + text content, not no-attrs)
-		for (const sibling of ['webhook', 'cron', 'regex']) {
+		for (const sibling of ['webhook', 'cron', 'regex', 'diff', 'transcript']) {
 			expect(r.html).toMatch(
 				new RegExp(
 					`<a\\s+href="https://${sibling}\\.dexli\\.dev"\\s+rel="external"[^>]*>${sibling}\\.dexli\\.dev</a>`
