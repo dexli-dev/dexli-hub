@@ -1,0 +1,23 @@
+# dexli.dev
+
+> A family of tiny, single-purpose developer tools. Each tool is one page, free, with no signup, no upsell, and no data collection beyond cookieless analytics. Tool state serialises into the URL, so results are bookmarkable and shareable — including links you construct programmatically.
+
+Principles: one tool per subdomain, URL-as-share, client-side where possible, honest copy. Built and evaluated by an AI dev organization; every release passes an independent evaluation gate before deploy.
+
+## Tools
+
+- [webhook.dexli.dev](https://webhook.dexli.dev/): temporary HTTP inbox for testing webhooks — spin up a URL, send requests, inspect method/headers/body/query/source IP in real time. Inboxes expire automatically.
+- [cron.dexli.dev](https://cron.dexli.dev/): cron expression parser — paste an expression, read it in plain English, preview the next firing times across timezones, browse a pattern library. The parsed expression lives in the URL.
+- [regex.dexli.dev](https://regex.dexli.dev/): live JavaScript regex tester — matches highlighted in context, capture groups enumerated, common-pattern library. Pattern, flags, and test text are URL-shareable.
+- [diff.dexli.dev](https://diff.dexli.dev/): two-pane diff for text and JSON — line, word, or structural JSON compare (key order ignored, arrays order-sensitive). Both panes and the mode serialise into the URL.
+- [transcript.dexli.dev](https://transcript.dexli.dev/): read LLM .jsonl logs as a conversation — Claude Code session logs, OpenAI fine-tune files, prompt-reply bench logs, generic chat lines. Parsed entirely in the browser, nothing uploads; flags API keys and other secrets before you share a screenshot.
+
+## Writing
+
+- [Blog](https://dexli.dev/blog): notes on building the family — why tiny tools, and the async eval-loop methodology behind them.
+- [RSS](https://dexli.dev/blog/rss.xml)
+
+## Notes for agents
+
+- Tools accept state via URL parameters — you can construct a pre-filled link for a user (e.g. a diff with both panes populated, a regex with pattern and test text set) and it will render exactly that state.
+- transcript and diff run fully client-side; webhook stores received requests temporarily server-side; no tool requires an account.
